@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Budget Calculator</title>
+</head>
+<body>
+    <h1>Budget Calculator</h1>
+    <form method="post">
+        Gross Salary: <input type="number" name="gross_salary" step="0.01" required>
+        <input type="submit" value="Calculate">
+    </form>
+    {% if result %}
+        <h2>{{ result }}</h2>
+    {% endif %}
+</body>
+</html>
