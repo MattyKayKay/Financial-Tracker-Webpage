@@ -2,43 +2,68 @@ import pandas as pd
 
 def calculate_budget(gross_salary):
 
-    # Example constants (replace with values from your spreadsheet)
+    # Rate Percents
     employer_pension_percent = 0.03
     employee_pension_percent = float(input("Enter your desired pension contribution percentage (as a number, e.g., 5 for 5%): ")) / 100
     pension_percent = employer_pension_percent + employee_pension_percent
     income_tax_percent = 0.20
-    ni_percent = 0.08
+    ni_tier1_percent = 0.08
+    ni_tier2_percent = 0.02
     student_loan_percent = 0.09
 
-    # Example thresholds (replace with your actual values)
+    # Thresholds
     income_tax_threshold = 12570
-    ni_lower_threshold = 12584
-    ni_upper_threshold = 50284
+    ni_tier1_lower_threshold = 242
+    ni_tier1_upper_threshold = 967
+    ni_tier2_lower_threshold = 967
     student_loan_threshold = 2172
 
-    # Calculations
+    # Gross Calculations
     monthly_gross = gross_salary / 12
+    weekly_gross = gross_salary / 52
+
+    # Pension Calculations
     pension = monthly_gross * pension_percent
+    
+    # Income Tax Calculations
     taxable_income = max(0, gross_salary - income_tax_threshold - pension * 12)
     income_tax = (taxable_income * income_tax_percent) / 12 if taxable_income > 0 else 0
-    ni_income = max(0, monthly_gross - ni_lower_threshold)
-    national_insurance = (ni_income * ni_percent) / 12 if ni_income > 0 else 0
-    sl_income = max(0, gross_salary - student_loan_threshold - pension)
-    student_loan = (sl_income * student_loan_percent) / 12 if sl_income > 0 else 0
+    
+    #National Insurance Calculations
+    WEEKS_PER_YEAR   = 52
+    MONTHS_PER_YEAR  = 12
+    WEEKS_PER_MONTH_BY_YEAR  = WEEKS_PER_YEAR / MONTHS_PER_YEAR
+    #Tier 1 National Insurance
+    ni_band_width = ni_tier1_upper_threshold - ni_tier1_lower_threshold
+    income_above_lower = weekly_gross - ni_tier1_lower_threshold
 
-    # Calculate annual National Insurance
-    if gross_salary <= ni_lower_threshold:
-        annual_national_insurance = 0
-    elif gross_salary <= ni_upper_threshold:
-        annual_national_insurance = (gross_salary - ni_lower_threshold) * 0.08
+    if income_above_lower > 0:
+        ni_tier1_income = min(max(0, income_above_lower), ni_band_width)
+        tier1_national_insurance = ni_tier1_income * ni_tier1_percent * WEEKS_PER_MONTH_BY_YEAR  # Monthly
     else:
-        annual_national_insurance = (ni_upper_threshold - ni_lower_threshold) * 0.08 + (gross_salary - ni_upper_threshold) * 0.02
+        tier1_national_insurance = 0
 
-    # Convert annual NI to monthly
-    national_insurance = annual_national_insurance / 12
+    #Tier 2 National Insurance
+    ni_tier2_income = max(0, weekly_gross - ni_tier2_lower_threshold)
+    tier2_national_insurance = ni_tier2_income * ni_tier2_percent * WEEKS_PER_MONTH_BY_YEAR  # Monthly   
+    
+    #Total National Insurance
+    national_insurance = tier1_national_insurance + tier2_national_insurance
 
-    total_deductions = pension + income_tax + national_insurance + student_loan
+
+    # ni_tier1_income = max(0, min(weekly_gross, ni_tier1_upper_threshold) - ni_tier1_lower_threshold)
+    # tier1_national_insurance = (ni_tier1_income * ni_tier1_percent) * 4 if ni_tier1_income > 0 else 0
+
+    # Student Loan Calculations
+    sl_income = max(0, monthly_gross - student_loan_threshold)
+    student_loan = (sl_income * student_loan_percent) if sl_income > 0 else 0
+     
+
+    total_deductions = pension + income_tax + tier1_national_insurance + student_loan
     take_home = monthly_gross - total_deductions
+
+
+
 
     # Results as a dictionary
     results = {
