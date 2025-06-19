@@ -12,7 +12,8 @@ def calculate_budget(gross_salary):
 
     # Example thresholds (replace with your actual values)
     income_tax_threshold = 12570
-    ni_threshold = 967
+    ni_lower_threshold = 12584
+    ni_upper_threshold = 50284
     student_loan_threshold = 2172
 
     # Calculations
@@ -20,10 +21,21 @@ def calculate_budget(gross_salary):
     pension = monthly_gross * pension_percent
     taxable_income = max(0, gross_salary - income_tax_threshold - pension * 12)
     income_tax = (taxable_income * income_tax_percent) / 12 if taxable_income > 0 else 0
-    ni_income = max(0, monthly_gross - ni_threshold)
-    national_insurance = ni_income * ni_percent if ni_income > 0 else 0
-    sl_income = max(0, gross_salary - student_loan_threshold)
+    ni_income = max(0, monthly_gross - ni_lower_threshold)
+    national_insurance = (ni_income * ni_percent) / 12 if ni_income > 0 else 0
+    sl_income = max(0, gross_salary - student_loan_threshold - pension)
     student_loan = (sl_income * student_loan_percent) / 12 if sl_income > 0 else 0
+
+    # Calculate annual National Insurance
+    if gross_salary <= ni_lower_threshold:
+        annual_national_insurance = 0
+    elif gross_salary <= ni_upper_threshold:
+        annual_national_insurance = (gross_salary - ni_lower_threshold) * 0.08
+    else:
+        annual_national_insurance = (ni_upper_threshold - ni_lower_threshold) * 0.08 + (gross_salary - ni_upper_threshold) * 0.02
+
+    # Convert annual NI to monthly
+    national_insurance = annual_national_insurance / 12
 
     total_deductions = pension + income_tax + national_insurance + student_loan
     take_home = monthly_gross - total_deductions
