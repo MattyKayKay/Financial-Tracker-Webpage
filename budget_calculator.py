@@ -1,8 +1,11 @@
 import pandas as pd
 
 def calculate_budget(gross_salary):
+
     # Example constants (replace with values from your spreadsheet)
-    pension_percent = 0.16
+    employer_pension_percent = 0.03
+    employee_pension_percent = float(input("Enter your desired pension contribution percentage (as a number, e.g., 5 for 5%): ")) / 100
+    pension_percent = employer_pension_percent + employee_pension_percent
     income_tax_percent = 0.20
     ni_percent = 0.08
     student_loan_percent = 0.09
@@ -15,7 +18,7 @@ def calculate_budget(gross_salary):
     # Calculations
     monthly_gross = gross_salary / 12
     pension = monthly_gross * pension_percent
-    taxable_income = max(0, gross_salary - income_tax_threshold)
+    taxable_income = max(0, gross_salary - income_tax_threshold - pension * 12)
     income_tax = (taxable_income * income_tax_percent) / 12 if taxable_income > 0 else 0
     ni_income = max(0, monthly_gross - ni_threshold)
     national_insurance = ni_income * ni_percent if ni_income > 0 else 0
