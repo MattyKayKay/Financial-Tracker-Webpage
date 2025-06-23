@@ -91,3 +91,19 @@ if __name__ == "__main__":
     df = pd.DataFrame([results])
     df.to_csv("budget_results.csv", index=False)
     print("\nResults saved to budget_results.csv")
+
+
+# API endpoint
+@app.route('/calculate', methods=['POST'])
+def calculate():
+    data = request.json
+    try:
+        salary = float(data.get('salary', 0))
+        result = calculate_budget(salary)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+# Only used locally
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
