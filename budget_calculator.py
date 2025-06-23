@@ -1,7 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pandas as pd
 
 app = Flask(__name__)
+CORS(app)  # This enables CORS for all routes
+
+
+# Budget Calculator Function
 
 def calculate_budget(gross_salary, employee_pension_percent):
 
