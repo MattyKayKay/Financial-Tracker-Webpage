@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: budgetcalculator-api
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: gunicorn calculator_api:app
+    envVars:
+      - key: PORT
+        value: 10000
