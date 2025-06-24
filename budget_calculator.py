@@ -8,7 +8,7 @@ CORS(app)  # This enables CORS for all routes
 
 # Budget Calculator Function
 
-def calculate_budget(gross_salary, employee_pension_percent):
+def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="plan2"):
 
     # Rate Percents
     employer_pension_percent = 0.03
@@ -16,14 +16,21 @@ def calculate_budget(gross_salary, employee_pension_percent):
     income_tax_percent = 0.20
     ni_tier1_percent = 0.08
     ni_tier2_percent = 0.02
-    student_loan_percent = 0.09
 
     # Thresholds
     income_tax_threshold = 12570
     ni_tier1_lower_threshold = 242
     ni_tier1_upper_threshold = 967
     ni_tier2_lower_threshold = 967
-    student_loan_threshold = 2172
+
+    # Student Loan Plan Thresholds (monthly)
+    STUDENT_LOAN_PLANS = {
+    "none": {"threshold": float('inf'), "rate": 0.00},
+    "plan1": {"threshold": 2082.50, "rate": 0.09},
+    "plan2": {"threshold": 2274.58, "rate": 0.09},
+    "plan4": {"threshold": 2500.00, "rate": 0.09},
+    "pgl":   {"threshold": 1750.00, "rate": 0.06}
+    }
 
     # Gross Calculations
     monthly_gross = gross_salary / 12
@@ -49,20 +56,23 @@ def calculate_budget(gross_salary, employee_pension_percent):
 
     income_tax = 0
 
-    # Basic rate: 20% on income from £12,571 to £50,270
-    basic_band_limit = 50270
+    # Tax Band Widths
+    basic_rate_limit = 50270
+    higher_rate_limit = 125140
+
+    # Basic Rate: 20% on £12,571–£50,270 (band width: £37,700)
     if taxable_income > 0:
-        basic_band = min(taxable_income, basic_band_limit - personal_allowance)
+        basic_band = min(taxable_income, 37700)
         income_tax += basic_band * 0.20
 
-    # Higher rate: 40% on income from £50,271 to £125,140
-    if gross_minus_pension > 50270:
-        higher_band = min(taxable_income - basic_band, 125140 - basic_band_limit)
+    # Higher Rate: 40% on £50,271–£125,140 (band width: £74,870)
+    if taxable_income > 37700:
+        higher_band = min(taxable_income - 37700, 74870)
         income_tax += higher_band * 0.40
 
-    # Additional rate: 45% on income over £125,140
-    if gross_minus_pension > 125140:
-        additional_band = taxable_income - basic_band - higher_band
+    # Additional Rate: 45% on income over £125,140
+    if taxable_income > 112570:  # £12,570 + £37,700 + £74,870 = £125,140
+        additional_band = taxable_income - 112570
         income_tax += additional_band * 0.45
 
     # Convert annual tax to monthly
@@ -87,9 +97,14 @@ def calculate_budget(gross_salary, employee_pension_percent):
 
     national_insurance = tier1_national_insurance + tier2_national_insurance
 
-    # Student Loan
-    sl_income = max(0, monthly_gross - student_loan_threshold)
-    student_loan = sl_income * student_loan_percent if sl_income > 0 else 0
+    # Student Loan Calculation (based on selected plan)
+    plan = STUDENT_LOAN_PLANS.get(student_loan_plan.lower(), STUDENT_LOAN_PLANS["none"])
+    threshold = plan["threshold"]
+    rate = plan["rate"]
+
+    sl_income = max(0, monthly_gross - threshold)
+    student_loan = sl_income * rate if sl_income > 0 else 0
+
 
     # Total & Net
     total_deductions = pension + income_tax + national_insurance + student_loan
@@ -111,11 +126,14 @@ def calculate():
     data = request.json
     try:
         salary = float(data.get('salary', 0))
-        pension_pct = float(data.get('pension_percent', 5))  # Default to 5% if not provided
-        result = calculate_budget(salary, pension_pct)
+        pension_percent = float(data.get('pension_percent', 0))
+        loan_plan = data.get('student_loan_plan', 'none')
+
+        result = calculate_budget(salary, pension_percent, loan_plan)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
 
 # Render uses this, don't remove it
 if __name__ == '__main__':
