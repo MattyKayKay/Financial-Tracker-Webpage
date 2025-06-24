@@ -32,9 +32,41 @@ def calculate_budget(gross_salary, employee_pension_percent):
     # Pension Calculations
     pension = monthly_gross * pension_percent
 
-    # Income Tax Calculations
-    taxable_income = max(0, gross_salary - income_tax_threshold - pension * 12)
-    income_tax = (taxable_income * income_tax_percent) / 12 if taxable_income > 0 else 0
+    # Income Tax Calculations using UK tax bands + personal allowance taper
+    gross_minus_pension = gross_salary - (pension * 12)
+
+    # Personal Allowance Tapering
+    if gross_minus_pension <= 100000:
+        personal_allowance = 12570
+    elif gross_minus_pension >= 125140:
+        personal_allowance = 0
+    else:
+        reduction = (gross_minus_pension - 100000) / 2
+        personal_allowance = max(0, 12570 - reduction)
+
+    # Calculate taxable income after personal allowance
+    taxable_income = max(0, gross_minus_pension - personal_allowance)
+
+    income_tax = 0
+
+    # Basic rate: 20% on income from £12,571 to £50,270
+    basic_band_limit = 50270
+    if taxable_income > 0:
+        basic_band = min(taxable_income, basic_band_limit - personal_allowance)
+        income_tax += basic_band * 0.20
+
+    # Higher rate: 40% on income from £50,271 to £125,140
+    if gross_minus_pension > 50270:
+        higher_band = min(taxable_income - basic_band, 125140 - basic_band_limit)
+        income_tax += higher_band * 0.40
+
+    # Additional rate: 45% on income over £125,140
+    if gross_minus_pension > 125140:
+        additional_band = taxable_income - basic_band - higher_band
+        income_tax += additional_band * 0.45
+
+    # Convert annual tax to monthly
+    income_tax /= 12
 
     # NI Calculations
     WEEKS_PER_YEAR = 52
