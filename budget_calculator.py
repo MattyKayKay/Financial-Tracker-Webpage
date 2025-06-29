@@ -244,27 +244,39 @@ def calculate_foodshop():
         if not isinstance(items, list) or not items:
             raise ValueError("No items provided.")
 
-        total = 0.0
+        weekly_total = 0.0
         itemized = []
+
         for item in items:
             name = str(item.get('name', '')).strip()
             price = float(item.get('price', 0))
-            if not name or price < 0:
-                raise ValueError("Invalid item entry.")
-            total += price
-            itemized.append({'name': name, 'price': round(price, 2)})
+            quantity = int(item.get('quantity', 1))
 
-        monthly_total = total * 4
+            if not name or price < 0 or quantity < 1:
+                raise ValueError("Invalid item entry.")
+
+            weekly_cost = price * quantity
+            weekly_total += weekly_cost
+
+            itemized.append({
+                'name': name,
+                'price': round(price, 2),
+                'quantity': quantity
+            })
+
+        monthly_total = weekly_total * 4  # Assume 4 weeks/month
         remaining_after_food = remaining_after_bills - monthly_total
 
         return jsonify({
             "items": itemized,
-            "total": round(total, 2),
+            "total": round(weekly_total, 2),
             "monthly_total": round(monthly_total, 2),
             "remaining_after_food": round(remaining_after_food, 2)
         })
+
     except Exception as e:
         return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
 
 
 @app.after_request
