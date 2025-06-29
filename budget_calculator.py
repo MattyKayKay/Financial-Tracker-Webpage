@@ -166,6 +166,23 @@ def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="
 
     return results
 
+@app.route('/calculate', methods=['POST', 'OPTIONS'])
+def calculate():
+    if request.method == 'OPTIONS':
+        return '', 204  # Preflight response for CORS
+
+    data = request.json
+    try:
+        salary = float(data.get('salary', 0))
+        pension_percent = float(data.get('pension_percent', 0))
+        loan_plan = data.get('student_loan_plan', 'none')
+
+        result = calculate_budget(salary, pension_percent, loan_plan)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
 @app.route('/calculate_living', methods=['POST', 'OPTIONS'])
 def calculate_living():
     if request.method == 'OPTIONS':
@@ -210,6 +227,7 @@ def calculate_living():
         })
     except Exception as e:
         return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
 
 @app.after_request
 def add_cors_headers(response):
