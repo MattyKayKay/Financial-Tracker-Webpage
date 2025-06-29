@@ -3,12 +3,15 @@ from flask_cors import CORS
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app)  # This enables CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})  # This enables CORS for all routes
 
 
 # Budget Calculator Function
 
-def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="plan2"):
+def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="plan2",
+                     monthly_rent=None, yearly_council_tax=None):
+
+    # --- Section 1: Take Home Deductions Calculation ---
 
     # Rate Percents
     employer_pension_percent = 0.03
@@ -110,31 +113,129 @@ def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="
     total_deductions = pension + income_tax + national_insurance + student_loan
     take_home = monthly_gross - total_deductions
 
-    return {
+    # --- Section 2: Living Costs Calculation ---
+
+    # Ask user for monthly rent and yearly council tax
+    if monthly_rent is None:
+        try:
+            monthly_rent = float(input("Enter your monthly rent (£): "))
+        except Exception:
+            monthly_rent = 595.00  # Default value
+
+    if yearly_council_tax is None:
+        try:
+            yearly_council_tax = float(input("Enter your yearly council tax (£): "))
+        except Exception:
+            yearly_council_tax = 1818.05  # Default value
+
+    # Assumed yearly costs (can be made user inputs if needed)
+    yearly_water_bill = 286.00
+    yearly_gas_electric = 1712.00
+    yearly_home_insurance = 125.00
+
+    # Convert yearly costs to monthly
+    monthly_council_tax = yearly_council_tax / 12
+    monthly_water_bill = yearly_water_bill / 12
+    monthly_gas_electric = yearly_gas_electric / 12
+    monthly_home_insurance = yearly_home_insurance / 12
+
+    # Calculate total living costs
+    living_costs = (
+        monthly_rent +
+        monthly_council_tax +
+        monthly_water_bill +
+        monthly_gas_electric +
+        monthly_home_insurance
+    )
+
+    # Calculate remaining income after living costs
+    remaining_after_living = take_home - living_costs
+
+    # Add these to the results dictionary
+    results = {
         "Gross": round(monthly_gross, 2),
         "Pension": round(pension, 2),
         "Income Tax": round(income_tax, 2),
         "National Insurance": round(national_insurance, 2),
         "Student Loan": round(student_loan, 2),
         "Total Deductions": round(total_deductions, 2),
-        "Take Home": round(take_home, 2)
+        "Take Home": round(take_home, 2),
+        "Living Costs": round(living_costs, 2),
+        "Remaining After Living Costs": round(remaining_after_living, 2)
     }
 
-# API endpoint
-@app.route('/calculate', methods=['POST'])
-def calculate():
+    return results
+
+@app.route('/calculate_living', methods=['POST', 'OPTIONS'])
+def calculate_living():
+    if request.method == 'OPTIONS':
+        return '', 204  # Preflight response for CORS
+
     data = request.json
     try:
-        salary = float(data.get('salary', 0))
-        pension_percent = float(data.get('pension_percent', 0))
-        loan_plan = data.get('student_loan_plan', 'none')
+        # Ensure all values are provided and valid numbers
+        take_home = data.get('take_home')
+        monthly_rent = data.get('monthly_rent')
+        yearly_council_tax = data.get('yearly_council_tax')
 
-        result = calculate_budget(salary, pension_percent, loan_plan)
-        return jsonify(result)
+        if take_home is None or monthly_rent is None or yearly_council_tax is None:
+            raise ValueError("All fields are required.")
+
+        take_home = float(take_home)
+        monthly_rent = float(monthly_rent)
+        yearly_council_tax = float(yearly_council_tax)
+
+        # Assumed yearly costs
+        yearly_water_bill = 286.00
+        yearly_gas_electric = 1712.00
+        yearly_home_insurance = 125.00
+
+        monthly_council_tax = yearly_council_tax / 12
+        monthly_water_bill = yearly_water_bill / 12
+        monthly_gas_electric = yearly_gas_electric / 12
+        monthly_home_insurance = yearly_home_insurance / 12
+
+        living_costs = (
+            monthly_rent +
+            monthly_council_tax +
+            monthly_water_bill +
+            monthly_gas_electric +
+            monthly_home_insurance
+        )
+        remaining_after_living = take_home - living_costs
+
+        return jsonify({
+            "Living Costs": round(living_costs, 2),
+            "Remaining After Living Costs": round(remaining_after_living, 2)
+        })
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    return response
 
 
 # Render uses this, don't remove it
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    # Example test values
+    gross_salary = 38000
+    pension_percent = 10
+    student_loan_plan = "plan2"
+    rent = 600
+    council_tax = 1800
+
+    result = calculate_budget(
+        gross_salary,
+        pension_percent,
+        student_loan_plan,
+        monthly_rent=rent,
+        yearly_council_tax=council_tax
+    )
+
+    print("Test run result:")
+    for k, v in result.items():
+        print(f"{k}: £{v:.2f}")

@@ -1,0 +1,157 @@
+<div style="display:flex; justify-content:center; align-items:flex-start; gap:40px; max-width:900px; margin:30px auto;">
+  <!-- Left: Section 1 - Income & Deductions -->
+  <div style="flex:1;">
+    <form id="budget-form" style="max-width:400px; margin:20px auto; font-family:sans-serif;">
+      <h3>Income & Deductions</h3>
+      <label>
+        Annual Gross Salary (£):<br />
+        <input type="number" id="salary" required min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <label>
+        Pension Contribution (%):<br />
+        <input type="number" id="pension_percent" required min="0" max="100" step="any" value="5" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <label>
+        Student Loan Plan:<br />
+        <select id="student_loan_plan" style="width:100%; padding:8px; margin-bottom:10px;">
+          <option value="none">None</option>
+          <option value="plan1">Plan 1 (before 2012)</option>
+          <option value="plan2" selected>Plan 2 (after 2012)</option>
+          <option value="plan4">Plan 4 (Scotland)</option>
+          <option value="pgl">Postgraduate Loan</option>
+        </select>
+      </label>
+      <button type="button" id="calc-section1" style="padding:10px 20px; cursor:pointer;">Calculate Section 1</button>
+    </form>
+    <div id="result-section1" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #ccc; padding:15px; border-radius:5px; display:none;"></div>
+  </div>
+  <!-- Right: Section 2 - Living Costs -->
+  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+    <form id="living-costs-form">
+      <h3 style="margin-top:0;">Living Costs</h3>
+      <label>
+        Take Home (£):<br />
+        <input type="number" id="take_home_manual" min="0" step="any" required style="width:100%; padding:8px; margin-bottom:10px;" placeholder="Enter or auto-fill from Section 1" />
+      </label>
+      <label>
+        Monthly Rent (£):<br />
+        <input type="number" id="monthly_rent" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <label>
+        Yearly Council Tax (£):<br />
+        <input type="number" id="yearly_council_tax" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <button type="button" id="calc-section2" style="padding:10px 20px; cursor:pointer;">Calculate Section 2</button>
+    </form>
+    <div id="result-section2" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #bcd; padding:15px; border-radius:5px; display:none;"></div>
+  </div>
+</div>
+
+<script>
+  // Section 1: Income & Deductions
+  let lastTakeHome = null; // Store for Section 2
+
+  document.getElementById('calc-section1').addEventListener('click', async () => {
+    const salary = parseFloat(document.getElementById('salary').value);
+    const pension_percent = parseFloat(document.getElementById('pension_percent').value);
+    const student_loan_plan = document.getElementById('student_loan_plan').value;
+    const resultDiv = document.getElementById('result-section1');
+    resultDiv.style.display = 'none';
+    resultDiv.textContent = 'Calculating...';
+
+    if (isNaN(salary) || salary <= 0) {
+      alert('Please enter a valid salary');
+      return;
+    }
+    if (isNaN(pension_percent) || pension_percent < 0 || pension_percent > 100) {
+      alert('Please enter a valid pension contribution percent between 0 and 100');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://budgetcalculator-api.onrender.com/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salary,
+          pension_percent,
+          student_loan_plan
+        })
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+      const data = await response.json();
+
+      lastTakeHome = data["Take Home"]; // Save for Section 2
+
+      // Auto-fill the take home box in Section 2
+      document.getElementById('take_home_manual').value = lastTakeHome;
+
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `
+        <strong>Section 1 Results</strong><br>
+        Gross: £${data.Gross}<br>
+        Pension: £${data.Pension}<br>
+        Income Tax: £${data["Income Tax"]}<br>
+        National Insurance: £${data["National Insurance"]}<br>
+        Student Loan: £${data["Student Loan"]}<br>
+        Total Deductions: £${data["Total Deductions"]}<br>
+        <strong>Take Home: £${data["Take Home"]}</strong>
+      `;
+    } catch (error) {
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = 'Error calculating budget. Please try again.';
+      console.error(error);
+    }
+  });
+
+  // Section 2: Living Costs
+  document.getElementById('calc-section2').addEventListener('click', async () => {
+    // Use the value from the input box, not just lastTakeHome
+    const take_home = parseFloat(document.getElementById('take_home_manual').value);
+    const monthly_rent = parseFloat(document.getElementById('monthly_rent').value);
+    const yearly_council_tax = parseFloat(document.getElementById('yearly_council_tax').value);
+    const resultDiv = document.getElementById('result-section2');
+    resultDiv.style.display = 'none';
+    resultDiv.textContent = 'Calculating...';
+
+    if (isNaN(take_home) || take_home < 0) {
+      alert('Please enter a valid take home amount (from Section 1 or manually).');
+      return;
+    }
+    if (isNaN(monthly_rent) || monthly_rent < 0) {
+      alert('Please enter a valid monthly rent');
+      return;
+    }
+    if (isNaN(yearly_council_tax) || yearly_council_tax < 0) {
+      alert('Please enter a valid yearly council tax');
+      return;
+    }
+
+    try {
+      const response = await fetch('https://budgetcalculator-api.onrender.com/calculate_living', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          take_home,
+          monthly_rent,
+          yearly_council_tax
+        })
+      });
+
+      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+      const data = await response.json();
+
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `
+        <strong>Section 2 Results</strong><br>
+        Living Costs: £${data["Living Costs"]}<br>
+        <strong>Remaining After Living Costs: £${data["Remaining After Living Costs"]}</strong>
+      `;
+    } catch (error) {
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = 'Error calculating living costs. Please try again.';
+      console.error(error);
+    }
+  });
+</script>
