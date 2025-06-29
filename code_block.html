@@ -1,4 +1,4 @@
-<div style="display:flex; justify-content:center; align-items:flex-start; gap:40px; max-width:900px; margin:30px auto;">
+<div style="display:flex; justify-content:center; align-items:flex-start; gap:40px; max-width:1300px; margin:30px auto;">
   <!-- Left: Section 1 - Income & Deductions -->
   <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
     <form id="budget-form">
@@ -21,11 +21,11 @@
           <option value="pgl">Postgraduate Loan</option>
         </select>
       </label>
-      <button type="button" id="calc-section1" style="padding:10px 20px; cursor:pointer;">Calculate Section 1</button>
+      <button type="button" id="calc-section1" style="padding:10px 20px; cursor:pointer;">Calculate Take Home Pay</button>
     </form>
     <div id="result-section1" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #ccc; padding:15px; border-radius:5px; display:none;"></div>
   </div>
-  <!-- Right: Section 2 - Bills -->
+  <!-- Middle: Section 2 - Bills -->
   <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
     <form id="bills-form">
       <h3 style="margin-top:0;">Bills</h3>
@@ -41,15 +41,38 @@
         Yearly Council Tax (£):<br />
         <input type="number" id="yearly_council_tax" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
       </label>
-      <button type="button" id="calc-section2" style="padding:10px 20px; cursor:pointer;">Calculate Section 2</button>
+      <button type="button" id="calc-section2" style="padding:10px 20px; cursor:pointer;">Calculate Remaining Budget After Bills</button>
     </form>
     <div id="result-section2" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #bcd; padding:15px; border-radius:5px; display:none;"></div>
+  </div>
+  <!-- Right: Section 3: Weekly Food Shop -->
+  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+    <form id="foodshop-form" onsubmit="return false;">
+      <h3 style="margin-top:0;">Weekly Food Shop</h3>
+      <label>
+        Remaining After Bills (£):<br />
+        <input type="number" id="remaining_after_bills_manual" min="0" step="any" required style="width:100%; padding:8px; margin-bottom:10px;" placeholder="Enter or auto-fill from Section 2" />
+      </label>
+      <label>
+        Item Name:<br />
+        <input type="text" id="food_item_name" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <label>
+        Item Price (£):<br />
+        <input type="number" id="food_item_price" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      </label>
+      <button type="button" id="add-food-item" style="padding:8px 16px; margin-bottom:10px;">Add Item</button>
+    </form>
+    <div id="foodshop-list" style="margin-bottom:10px;"></div>
+    <button type="button" id="calc-food-shop" style="padding:10px 20px; margin-bottom:10px;">Calculate Food Shop</button>
+    <div id="foodshop-result" style="font-weight:bold;"></div>
   </div>
 </div>
 
 <script>
   // Section 1: Income & Deductions
   let lastTakeHome = null; // Store for Section 2
+  let lastRemainingAfterBills = null; // Store for Section 3
 
   document.getElementById('calc-section1').addEventListener('click', async () => {
     const salary = parseFloat(document.getElementById('salary').value);
@@ -89,13 +112,13 @@
 
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = `
-        <strong>Section 1 Results</strong><br>
         Gross: £${data.Gross}<br>
         Pension: £${data.Pension}<br>
         Income Tax: £${data["Income Tax"]}<br>
         National Insurance: £${data["National Insurance"]}<br>
         Student Loan: £${data["Student Loan"]}<br>
         Total Deductions: £${data["Total Deductions"]}<br>
+        <br>
         <strong>Take Home: £${data["Take Home"]}</strong>
       `;
     } catch (error) {
@@ -142,10 +165,14 @@
       if (!response.ok) throw new Error(`API error: ${response.statusText}`);
       const data = await response.json();
 
+      // Save and auto-fill Remaining After Bills for Section 3
+      lastRemainingAfterBills = data["Remaining After Bills"];
+      document.getElementById('remaining_after_bills_manual').value = lastRemainingAfterBills;
+
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = `
-        <strong>Section 2 Results</strong><br>
         Bills: £${data["Bills"]}<br>
+        <br>
         <strong>Remaining After Bills: £${data["Remaining After Bills"]}</strong>
       `;
     } catch (error) {
@@ -154,4 +181,96 @@
       console.error(error);
     }
   });
+
+  // Section 3: Weekly Food Shop
+  const foodItems = [];
+  const foodListDiv = document.getElementById('foodshop-list');
+  const foodResultDiv = document.getElementById('foodshop-result');
+
+  document.getElementById('add-food-item').addEventListener('click', () => {
+    const name = document.getElementById('food_item_name').value.trim();
+    const price = parseFloat(document.getElementById('food_item_price').value);
+    if (!name) {
+      alert('Please enter an item name.');
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      alert('Please enter a valid price.');
+      return;
+    }
+    // Default quantity is 1
+    foodItems.push({ name, price, quantity: 1 });
+    document.getElementById('food_item_name').value = '';
+    document.getElementById('food_item_price').value = '';
+    renderFoodList();
+  });
+
+  function renderFoodList() {
+    if (foodItems.length === 0) {
+      foodListDiv.innerHTML = "<em>No items added yet.</em>";
+      return;
+    }
+    foodListDiv.innerHTML = "<ul style='padding-left:20px;'>" +
+      foodItems.map((item, idx) => `
+        <li>
+          ${item.name}: £${item.price.toFixed(2)}
+          <select data-idx="${idx}" class="food-qty" style="margin-left:10px;">
+            ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}"${item.quantity === q ? ' selected' : ''}>x${q}</option>`).join('')}
+          </select>
+        </li>
+      `).join('') +
+      "</ul>";
+
+    // Attach change listeners to quantity dropdowns
+    document.querySelectorAll('.food-qty').forEach(sel => {
+      sel.addEventListener('change', function() {
+        const idx = parseInt(this.getAttribute('data-idx'));
+        foodItems[idx].quantity = parseInt(this.value);
+      });
+    });
+  }
+
+  document.getElementById('calc-food-shop').addEventListener('click', async () => {
+    const remaining_after_bills = parseFloat(document.getElementById('remaining_after_bills_manual').value);
+    if (isNaN(remaining_after_bills) || remaining_after_bills < 0) {
+      alert('Please enter a valid Remaining After Bills amount.');
+      return;
+    }
+    if (foodItems.length === 0) {
+      alert('Add at least one item.');
+      return;
+    }
+    foodResultDiv.textContent = "Calculating...";
+    try {
+      // Send quantities to backend
+      const itemsToSend = foodItems.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity || 1
+      }));
+      const response = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: itemsToSend, remaining_after_bills })
+      });
+      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      foodResultDiv.innerHTML = `
+        <ul style='padding-left:20px;'>
+          ${data.items.map(item => `<li>${item.name} x${item.quantity}: £${item.price.toFixed(2)} each</li>`).join('')}
+        </ul>
+        <strong>Total Weekly Food Shop: £${data.total.toFixed(2)}</strong><br>
+        <strong>Monthly Food Shop: £${data.monthly_total.toFixed(2)}</strong><br>
+        <strong>Remaining After Food Shop: £${data.remaining_after_food.toFixed(2)}</strong>
+      `;
+    } catch (error) {
+      foodResultDiv.textContent = 'Error calculating food shop. Please try again.';
+      console.error(error);
+    }
+  });
+
+  renderFoodList();
+</script>
 </script>

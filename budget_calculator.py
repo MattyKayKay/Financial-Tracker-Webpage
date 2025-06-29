@@ -164,6 +164,11 @@ def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="
         "Remaining After Living Costs": round(remaining_after_living, 2)
     }
 
+    # --- Section 3: Weekly Food Shop ---
+    
+
+
+
     return results
 
 @app.route('/calculate', methods=['POST', 'OPTIONS'])
@@ -223,6 +228,40 @@ def calculate_living():
         return jsonify({
             "Bills": round(bills, 2),
             "Remaining After Bills": round(remaining_after_bills, 2)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
+@app.route('/calculate_foodshop', methods=['POST', 'OPTIONS'])
+def calculate_foodshop():
+    if request.method == 'OPTIONS':
+        return '', 204  # Preflight response for CORS
+
+    data = request.json
+    try:
+        items = data.get('items', [])
+        remaining_after_bills = float(data.get('remaining_after_bills', 0))
+        if not isinstance(items, list) or not items:
+            raise ValueError("No items provided.")
+
+        total = 0.0
+        itemized = []
+        for item in items:
+            name = str(item.get('name', '')).strip()
+            price = float(item.get('price', 0))
+            if not name or price < 0:
+                raise ValueError("Invalid item entry.")
+            total += price
+            itemized.append({'name': name, 'price': round(price, 2)})
+
+        monthly_total = total * 4
+        remaining_after_food = remaining_after_bills - monthly_total
+
+        return jsonify({
+            "items": itemized,
+            "total": round(total, 2),
+            "monthly_total": round(monthly_total, 2),
+            "remaining_after_food": round(remaining_after_food, 2)
         })
     except Exception as e:
         return jsonify({'error': f'Invalid input: {str(e)}'}), 400
