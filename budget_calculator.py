@@ -182,7 +182,6 @@ def calculate():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-
 @app.route('/calculate_living', methods=['POST', 'OPTIONS'])
 def calculate_living():
     if request.method == 'OPTIONS':
@@ -212,18 +211,18 @@ def calculate_living():
         monthly_gas_electric = yearly_gas_electric / 12
         monthly_home_insurance = yearly_home_insurance / 12
 
-        living_costs = (
+        bills = (
             monthly_rent +
             monthly_council_tax +
             monthly_water_bill +
             monthly_gas_electric +
             monthly_home_insurance
         )
-        remaining_after_living = take_home - living_costs
+        remaining_after_bills = take_home - bills
 
         return jsonify({
-            "Living Costs": round(living_costs, 2),
-            "Remaining After Living Costs": round(remaining_after_living, 2)
+            "Bills": round(bills, 2),
+            "Remaining After Bills": round(remaining_after_bills, 2)
         })
     except Exception as e:
         return jsonify({'error': f'Invalid input: {str(e)}'}), 400
@@ -256,4 +255,5 @@ if __name__ == "__main__":
 
     print("Test run result:")
     for k, v in result.items():
+        print(f"{k}: £{v:.2f}")
         print(f"{k}: £{v:.2f}")

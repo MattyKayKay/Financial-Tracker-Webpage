@@ -1,8 +1,8 @@
 <div style="display:flex; justify-content:center; align-items:flex-start; gap:40px; max-width:900px; margin:30px auto;">
   <!-- Left: Section 1 - Income & Deductions -->
-  <div style="flex:1;">
-    <form id="budget-form" style="max-width:400px; margin:20px auto; font-family:sans-serif;">
-      <h3>Income & Deductions</h3>
+  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+    <form id="budget-form">
+      <h3 style="margin-top:0;">Income & Deductions</h3>
       <label>
         Annual Gross Salary (£):<br />
         <input type="number" id="salary" required min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
@@ -25,10 +25,10 @@
     </form>
     <div id="result-section1" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #ccc; padding:15px; border-radius:5px; display:none;"></div>
   </div>
-  <!-- Right: Section 2 - Living Costs -->
+  <!-- Right: Section 2 - Bills -->
   <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
-    <form id="living-costs-form">
-      <h3 style="margin-top:0;">Living Costs</h3>
+    <form id="bills-form">
+      <h3 style="margin-top:0;">Bills</h3>
       <label>
         Take Home (£):<br />
         <input type="number" id="take_home_manual" min="0" step="any" required style="width:100%; padding:8px; margin-bottom:10px;" placeholder="Enter or auto-fill from Section 1" />
@@ -105,7 +105,7 @@
     }
   });
 
-  // Section 2: Living Costs
+  // Section 2: Bills
   document.getElementById('calc-section2').addEventListener('click', async () => {
     // Use the value from the input box, not just lastTakeHome
     const take_home = parseFloat(document.getElementById('take_home_manual').value);
@@ -145,12 +145,12 @@
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = `
         <strong>Section 2 Results</strong><br>
-        Living Costs: £${data["Living Costs"]}<br>
-        <strong>Remaining After Living Costs: £${data["Remaining After Living Costs"]}</strong>
+        Bills: £${data["Bills"]}<br>
+        <strong>Remaining After Bills: £${data["Remaining After Bills"]}</strong>
       `;
     } catch (error) {
       resultDiv.style.display = 'block';
-      resultDiv.textContent = 'Error calculating living costs. Please try again.';
+      resultDiv.textContent = 'Error calculating bills. Please try again.';
       console.error(error);
     }
   });
