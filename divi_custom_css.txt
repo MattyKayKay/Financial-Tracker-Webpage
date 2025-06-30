@@ -1,0 +1,34 @@
+.budget-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: center;
+  margin: 30px auto;
+}
+.budget-section {
+  flex: 1 1 300px;
+  max-width: 400px;
+  background: #f4f8fb;
+  border: 1px solid #bcd;
+  border-radius: 5px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.budget-section input,
+.budget-section select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.budget-section button {
+  padding: 10px 20px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+@media (max-width: 900px) {
+  .budget-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

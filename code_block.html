@@ -1,19 +1,16 @@
-<div style="display:flex; justify-content:center; align-items:flex-start; gap:40px; max-width:1300px; margin:30px auto;">
-  <!-- Left: Section 1 - Income & Deductions -->
-  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+<div class="budget-container">
+  <!-- Section 1 -->
+  <div class="budget-section">
     <form id="budget-form">
-      <h3 style="margin-top:0;">Income & Deductions</h3>
-      <label>
-        Annual Gross Salary (£):<br />
-        <input type="number" id="salary" required min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      <h3>Income & Deductions</h3>
+      <label>Annual Gross Salary (£):
+        <input type="number" id="salary" required min="0" step="any" />
       </label>
-      <label>
-        Pension Contribution (%):<br />
-        <input type="number" id="pension_percent" required min="0" max="100" step="any" value="5" style="width:100%; padding:8px; margin-bottom:10px;" />
+      <label>Pension Contribution (%):
+        <input type="number" id="pension_percent" required min="0" max="100" step="any" value="5" />
       </label>
-      <label>
-        Student Loan Plan:<br />
-        <select id="student_loan_plan" style="width:100%; padding:8px; margin-bottom:10px;">
+      <label>Student Loan Plan:
+        <select id="student_loan_plan">
           <option value="none">None</option>
           <option value="plan1">Plan 1 (before 2012)</option>
           <option value="plan2" selected>Plan 2 (after 2012)</option>
@@ -21,268 +18,158 @@
           <option value="pgl">Postgraduate Loan</option>
         </select>
       </label>
-      <button type="button" id="calc-section1" style="padding:10px 20px; cursor:pointer;">Calculate Take Home Pay</button>
+      <button type="button" id="calc-section1">Calculate Take Home Pay</button>
     </form>
-    <div id="result-section1" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #ccc; padding:15px; border-radius:5px; display:none;"></div>
+    <div id="result-section1" style="display:none; margin-top:10px;"></div>
   </div>
-  <!-- Middle: Section 2 - Bills -->
-  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+
+  <!-- Section 2 -->
+  <div class="budget-section">
     <form id="bills-form">
-      <h3 style="margin-top:0;">Bills</h3>
-      <label>
-        Take Home (£):<br />
-        <input type="number" id="take_home_manual" min="0" step="any" required style="width:100%; padding:8px; margin-bottom:10px;" placeholder="Enter or auto-fill from Section 1" />
+      <h3>Bills</h3>
+      <label>Take Home (£):
+        <input type="number" id="take_home_manual" required />
       </label>
-      <label>
-        Monthly Rent (£):<br />
-        <input type="number" id="monthly_rent" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      <label>Monthly Rent (£):
+        <input type="number" id="monthly_rent" />
       </label>
-      <label>
-        Yearly Council Tax (£):<br />
-        <input type="number" id="yearly_council_tax" min="0" step="any" style="width:100%; padding:8px; margin-bottom:10px;" />
+      <label>Yearly Council Tax (£):
+        <input type="number" id="yearly_council_tax" />
       </label>
-      <button type="button" id="calc-section2" style="padding:10px 20px; cursor:pointer;">Calculate Remaining Budget After Bills</button>
+      <button type="button" id="calc-section2">Calculate Remaining Budget</button>
     </form>
-    <div id="result-section2" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #bcd; padding:15px; border-radius:5px; display:none;"></div>
+    <div id="result-section2" style="display:none; margin-top:10px;"></div>
   </div>
-  <!-- Right: Section 3: Weekly Food Shop -->
-  <div style="flex:1; max-width:400px; background:#f4f8fb; border:1px solid #bcd; border-radius:5px; padding:20px; font-family:sans-serif;">
+
+  <!-- Section 3 -->
+  <div class="budget-section">
     <form id="foodshop-form" onsubmit="return false;">
-      <h3 style="margin-top:0;">Weekly Food Shop</h3>
-      <label>
-        Remaining After Bills (£):<br />
-        <input type="number" id="remaining_after_bills_manual" min="0" step="any" required style="width:100%; padding:8px; margin-bottom:10px;" placeholder="Enter or auto-fill from Section 2" />
+      <h3>Weekly Food Shop</h3>
+      <label>Remaining After Bills (£):
+        <input type="number" id="remaining_after_bills_manual" required />
       </label>
-      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-        <label style="flex:1; margin-bottom:0;">
-          Item Name:<br />
-          <input type="text" id="food_item_name" style="width:100%; padding:8px;" />
-        </label>
-        <label style="flex:1; margin-bottom:0;">
-          Item Price (£):<br />
-          <input type="number" id="food_item_price" min="0" step="any" style="width:100%; padding:8px;" />
-        </label>
+      <div style="display:flex; gap:10px;">
+        <label style="flex:1;">Item:<input type="text" id="food_item_name" /></label>
+        <label style="flex:1;">Price (£):<input type="number" id="food_item_price" /></label>
       </div>
-      <button type="button" id="add-food-item" style="padding:8px 16px; margin-bottom:10px;">Add Item</button>
+      <button type="button" id="add-food-item">Add Item</button>
     </form>
-
-    <div id="foodshop-list" style="margin-bottom:10px;"></div>
-    <button type="button" id="calc-food-shop" style="padding:10px 20px; margin-bottom:10px;">Calculate Food Shop</button>
-
-    <!-- Styled wrapper for results like Sections 1 & 2 -->
-    <div id="foodshop-result-wrapper" style="max-width:400px; margin:10px auto; font-family:sans-serif; background:#f9f9f9; border:1px solid #ccc; padding:15px; border-radius:5px; display:none;">
-      <div id="foodshop-result" style="font-weight:normal;"></div>
+    <div id="foodshop-list" style="margin-top:10px;"></div>
+    <button type="button" id="calc-food-shop">Calculate Food Shop</button>
+    <div id="foodshop-result-wrapper" style="display:none; margin-top:10px;">
+      <div id="foodshop-result"></div>
     </div>
   </div>
-
+</div>
 
 <script>
-  // Section 1: Income & Deductions
-  let lastTakeHome = null; // Store for Section 2
-  let lastRemainingAfterBills = null; // Store for Section 3
+let lastTakeHome = null;
+let lastRemainingAfterBills = null;
 
-  document.getElementById('calc-section1').addEventListener('click', async () => {
-    const salary = parseFloat(document.getElementById('salary').value);
-    const pension_percent = parseFloat(document.getElementById('pension_percent').value);
-    const student_loan_plan = document.getElementById('student_loan_plan').value;
-    const resultDiv = document.getElementById('result-section1');
-    resultDiv.style.display = 'none';
-    resultDiv.textContent = 'Calculating...';
+document.getElementById('calc-section1').addEventListener('click', async () => {
+  const salary = parseFloat(document.getElementById('salary').value);
+  const pension_percent = parseFloat(document.getElementById('pension_percent').value);
+  const student_loan_plan = document.getElementById('student_loan_plan').value;
+  const resultDiv = document.getElementById('result-section1');
 
-    if (isNaN(salary) || salary <= 0) {
-      alert('Please enter a valid salary');
-      return;
-    }
-    if (isNaN(pension_percent) || pension_percent < 0 || pension_percent > 100) {
-      alert('Please enter a valid pension contribution percent between 0 and 100');
-      return;
-    }
+  if (!salary || salary < 0) return alert('Enter a valid salary');
+  if (pension_percent < 0 || pension_percent > 100) return alert('Enter a pension % between 0–100');
 
-    try {
-      const response = await fetch('https://budgetcalculator-api.onrender.com/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          salary,
-          pension_percent,
-          student_loan_plan
-        })
-      });
+  resultDiv.style.display = 'none';
 
-      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-      const data = await response.json();
+  try {
+    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ salary, pension_percent, student_loan_plan })
+    });
+    const data = await res.json();
 
-      lastTakeHome = data["Take Home"]; // Save for Section 2
+    lastTakeHome = data["Take Home"];
+    document.getElementById('take_home_manual').value = lastTakeHome;
 
-      // Auto-fill the take home box in Section 2
-      document.getElementById('take_home_manual').value = lastTakeHome;
+    resultDiv.innerHTML = `
+      Gross: £${data.Gross}<br>
+      Pension: £${data.Pension}<br>
+      Income Tax: £${data["Income Tax"]}<br>
+      NI: £${data["National Insurance"]}<br>
+      Student Loan: £${data["Student Loan"]}<br><br>
+      <strong>Take Home: £${data["Take Home"]}</strong>
+    `;
+    resultDiv.style.display = 'block';
+  } catch (e) {
+    resultDiv.innerText = "Error calculating.";
+    resultDiv.style.display = 'block';
+  }
+});
 
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = `
-        Gross: £${data.Gross}<br>
-        Pension: £${data.Pension}<br>
-        Income Tax: £${data["Income Tax"]}<br>
-        National Insurance: £${data["National Insurance"]}<br>
-        Student Loan: £${data["Student Loan"]}<br>
-        Total Deductions: £${data["Total Deductions"]}<br>
-        <br>
-        <strong>Take Home: £${data["Take Home"]}</strong>
-      `;
-    } catch (error) {
-      resultDiv.style.display = 'block';
-      resultDiv.textContent = 'Error calculating budget. Please try again.';
-      console.error(error);
-    }
-  });
+document.getElementById('calc-section2').addEventListener('click', async () => {
+  const take_home = parseFloat(document.getElementById('take_home_manual').value);
+  const rent = parseFloat(document.getElementById('monthly_rent').value);
+  const tax = parseFloat(document.getElementById('yearly_council_tax').value);
+  const resultDiv = document.getElementById('result-section2');
+  if (!take_home) return alert('Enter a valid take home');
 
-  // Section 2: Bills
-  document.getElementById('calc-section2').addEventListener('click', async () => {
-    // Use the value from the input box, not just lastTakeHome
-    const take_home = parseFloat(document.getElementById('take_home_manual').value);
-    const monthly_rent = parseFloat(document.getElementById('monthly_rent').value);
-    const yearly_council_tax = parseFloat(document.getElementById('yearly_council_tax').value);
-    const resultDiv = document.getElementById('result-section2');
-    resultDiv.style.display = 'none';
-    resultDiv.textContent = 'Calculating...';
+  try {
+    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_living', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ take_home, monthly_rent: rent, yearly_council_tax: tax })
+    });
+    const data = await res.json();
 
-    if (isNaN(take_home) || take_home < 0) {
-      alert('Please enter a valid take home amount (from Section 1 or manually).');
-      return;
-    }
-    if (isNaN(monthly_rent) || monthly_rent < 0) {
-      alert('Please enter a valid monthly rent');
-      return;
-    }
-    if (isNaN(yearly_council_tax) || yearly_council_tax < 0) {
-      alert('Please enter a valid yearly council tax');
-      return;
-    }
+    lastRemainingAfterBills = data["Remaining After Bills"];
+    document.getElementById('remaining_after_bills_manual').value = lastRemainingAfterBills;
 
-    try {
-      const response = await fetch('https://budgetcalculator-api.onrender.com/calculate_living', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          take_home,
-          monthly_rent,
-          yearly_council_tax
-        })
-      });
+    resultDiv.innerHTML = `
+      Bills: £${data.Bills}<br><br>
+      <strong>Remaining: £${data["Remaining After Bills"]}</strong>
+    `;
+    resultDiv.style.display = 'block';
+  } catch (e) {
+    resultDiv.innerText = "Error.";
+    resultDiv.style.display = 'block';
+  }
+});
 
-      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-      const data = await response.json();
-
-      // Save and auto-fill Remaining After Bills for Section 3
-      lastRemainingAfterBills = data["Remaining After Bills"];
-      document.getElementById('remaining_after_bills_manual').value = lastRemainingAfterBills;
-
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = `
-        Bills: £${data["Bills"]}<br>
-        <br>
-        <strong>Remaining After Bills: £${data["Remaining After Bills"]}</strong>
-      `;
-    } catch (error) {
-      resultDiv.style.display = 'block';
-      resultDiv.textContent = 'Error calculating bills. Please try again.';
-      console.error(error);
-    }
-  });
-
-// Section 3: Weekly Food Shop
 const foodItems = [];
-const foodListDiv = document.getElementById('foodshop-list');
-const foodResultDiv = document.getElementById('foodshop-result');
-const foodResultWrapper = document.getElementById('foodshop-result-wrapper');
 
 document.getElementById('add-food-item').addEventListener('click', () => {
   const name = document.getElementById('food_item_name').value.trim();
   const price = parseFloat(document.getElementById('food_item_price').value);
-  if (!name) {
-    alert('Please enter an item name.');
-    return;
-  }
-  if (isNaN(price) || price < 0) {
-    alert('Please enter a valid price.');
-    return;
-  }
-  // Default quantity is 1
-  foodItems.push({ name, price, quantity: 1 });
+  if (!name || isNaN(price)) return alert('Enter a name and price');
+
+  foodItems.push({ name, price });
   document.getElementById('food_item_name').value = '';
   document.getElementById('food_item_price').value = '';
-  renderFoodList();
+  updateList();
 });
 
-function renderFoodList() {
-  if (foodItems.length === 0) {
-    foodListDiv.innerHTML = "<em>No items added yet.</em>";
-    return;
-  }
-  foodListDiv.innerHTML = "<ul style='padding-left:20px;'>" +
-    foodItems.map((item, idx) => `
-      <li>
-        ${item.name}: £${item.price.toFixed(2)}
-        <select data-idx="${idx}" class="food-qty" style="margin-left:10px;">
-          ${[1,2,3,4,5,6,7,8,9,10].map(q => `<option value="${q}"${item.quantity === q ? ' selected' : ''}>x${q}</option>`).join('')}
-        </select>
-      </li>
-    `).join('') +
-    "</ul>";
-
-  // Attach change listeners to quantity dropdowns
-  document.querySelectorAll('.food-qty').forEach(sel => {
-    sel.addEventListener('change', function() {
-      const idx = parseInt(this.getAttribute('data-idx'));
-      foodItems[idx].quantity = parseInt(this.value);
-    });
-  });
+function updateList() {
+  const list = document.getElementById('foodshop-list');
+  list.innerHTML = '<ul>' + foodItems.map(i => `<li>${i.name}: £${i.price.toFixed(2)}</li>`).join('') + '</ul>';
 }
 
 document.getElementById('calc-food-shop').addEventListener('click', async () => {
-  const remaining_after_bills = parseFloat(document.getElementById('remaining_after_bills_manual').value);
-  if (isNaN(remaining_after_bills) || remaining_after_bills < 0) {
-    alert('Please enter a valid Remaining After Bills amount.');
-    return;
-  }
-  if (foodItems.length === 0) {
-    alert('Add at least one item.');
-    return;
-  }
-
-  foodResultWrapper.style.display = 'block';
-  foodResultDiv.textContent = "Calculating...";
+  const rem = parseFloat(document.getElementById('remaining_after_bills_manual').value);
+  const resultDiv = document.getElementById('foodshop-result');
+  if (!rem || foodItems.length === 0) return alert('Enter amount and add items');
 
   try {
-    const itemsToSend = foodItems.map(item => ({
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity || 1
-    }));
-
-    const response = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
+    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: itemsToSend, remaining_after_bills })
+      body: JSON.stringify({ items: foodItems, remaining_after_bills: rem })
     });
-
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-
-    foodListDiv.innerHTML = "";
-
-    foodResultDiv.innerHTML = `
-      Total Weekly Food Shop: £${data.total.toFixed(2)}<br>
-      Monthly Food Shop: £${data.monthly_total.toFixed(2)}<br>
-      <br>
-      <strong>Remaining After Food Shop: £${data.remaining_after_food.toFixed(2)}</strong>
+    const data = await res.json();
+    resultDiv.innerHTML = `
+      Weekly Total: £${data.total.toFixed(2)}<br>
+      Monthly: £${data.monthly_total.toFixed(2)}<br><br>
+      <strong>Remaining: £${data.remaining_after_food.toFixed(2)}</strong>
     `;
-  } catch (error) {
-    foodResultDiv.textContent = 'Error calculating food shop. Please try again.';
-    console.error(error);
+    document.getElementById('foodshop-result-wrapper').style.display = 'block';
+  } catch (e) {
+    resultDiv.innerText = "Error.";
   }
 });
-
-renderFoodList();
-</script>
 </script>
