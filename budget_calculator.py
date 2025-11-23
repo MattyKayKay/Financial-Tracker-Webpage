@@ -116,17 +116,12 @@ def calculate_budget(gross_salary, employee_pension_percent, student_loan_plan="
     # --- Section 2: Living Costs Calculation ---
 
     # Ask user for monthly rent and yearly council tax
+    # For API usage do not prompt; use provided values or sensible defaults
     if monthly_rent is None:
-        try:
-            monthly_rent = float(input("Enter your monthly rent (£): "))
-        except Exception:
-            monthly_rent = 595.00  # Default value
+        monthly_rent = 595.00
 
     if yearly_council_tax is None:
-        try:
-            yearly_council_tax = float(input("Enter your yearly council tax (£): "))
-        except Exception:
-            yearly_council_tax = 1818.05  # Default value
+        yearly_council_tax = 1818.05
 
     # Assumed yearly costs (can be made user inputs if needed)
     yearly_water_bill = 286.00
@@ -306,5 +301,4 @@ if __name__ == "__main__":
 
     print("Test run result:")
     for k, v in result.items():
-        print(f"{k}: £{v:.2f}")
         print(f"{k}: £{v:.2f}")
