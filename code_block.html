@@ -63,113 +63,156 @@
 </div>
 
 <script>
-let lastTakeHome = null;
-let lastRemainingAfterBills = null;
-
-document.getElementById('calc-section1').addEventListener('click', async () => {
-  const salary = parseFloat(document.getElementById('salary').value);
-  const pension_percent = parseFloat(document.getElementById('pension_percent').value);
-  const student_loan_plan = document.getElementById('student_loan_plan').value;
-  const resultDiv = document.getElementById('result-section1');
-
-  if (!salary || salary < 0) return alert('Enter a valid salary');
-  if (pension_percent < 0 || pension_percent > 100) return alert('Enter a pension % between 0–100');
-
-  resultDiv.style.display = 'none';
-
+document.addEventListener('DOMContentLoaded', () => {
   try {
-    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ salary, pension_percent, student_loan_plan })
-    });
-    const data = await res.json();
+    console.log('budget script loaded');
+    const safe = id => document.getElementById(id);
 
-    lastTakeHome = data["Take Home"];
-    document.getElementById('take_home_manual').value = lastTakeHome;
+    // Section 1: Take-home calculation
+    const btn1 = safe('calc-section1');
+    if (btn1 && !btn1.dataset.budgetAttached) {
+      btn1.addEventListener('click', async () => {
+        console.log('calc-section1 clicked');
+        const salary = parseFloat(safe('salary')?.value || 0);
+        const pension_percent = parseFloat(safe('pension_percent')?.value || 0);
+        const student_loan_plan = safe('student_loan_plan')?.value || 'none';
+        const resultDiv = safe('result-section1');
+        if (!salary || salary <= 0) return alert('Enter a valid salary');
+        resultDiv && (resultDiv.style.display = 'none');
+        try {
+          const res = await fetch('https://budgetcalculator-api.onrender.com/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ salary, pension_percent, student_loan_plan })
+          });
+          const data = await res.json();
+          console.log('take-home response', data);
+          safe('take_home_manual') && (safe('take_home_manual').value = data['Take Home']);
+          if (resultDiv) {
+            resultDiv.innerHTML = `
+              Gross: £${data.Gross}<br>
+              Pension: £${data.Pension}<br>
+              Income Tax: £${data['Income Tax']}<br>
+              NI: £${data['National Insurance']}<br>
+              Student Loan: £${data['Student Loan']}<br><br>
+              <strong>Take Home: £${data['Take Home']}</strong>
+            `;
+            resultDiv.style.display = 'block';
+          }
+        } catch (e) {
+          console.error('calculate error', e);
+          if (resultDiv) { resultDiv.innerText = 'Error calculating.'; resultDiv.style.display = 'block'; }
+        }
+      });
+      btn1.dataset.budgetAttached = '1';
+    }
 
-    resultDiv.innerHTML = `
-      Gross: £${data.Gross}<br>
-      Pension: £${data.Pension}<br>
-      Income Tax: £${data["Income Tax"]}<br>
-      NI: £${data["National Insurance"]}<br>
-      Student Loan: £${data["Student Loan"]}<br><br>
-      <strong>Take Home: £${data["Take Home"]}</strong>
-    `;
-    resultDiv.style.display = 'block';
-  } catch (e) {
-    resultDiv.innerText = "Error calculating.";
-    resultDiv.style.display = 'block';
-  }
-});
+    // Section 2: Remaining after bills
+    const btn2 = safe('calc-section2');
+    if (btn2 && !btn2.dataset.budgetAttached) {
+      btn2.addEventListener('click', async () => {
+        console.log('calc-section2 clicked');
+        const take_home = parseFloat(safe('take_home_manual')?.value || 0);
+        if (!take_home || take_home <= 0) return alert('Enter a valid take-home amount (or calculate it first)');
+        const rentVal = safe('monthly_rent')?.value;
+        const taxVal = safe('yearly_council_tax')?.value;
+        const monthly_rent = (rentVal === '' || rentVal === undefined) ? null : parseFloat(rentVal);
+        const yearly_council_tax = (taxVal === '' || taxVal === undefined) ? null : parseFloat(taxVal);
+        const resultDiv = safe('result-section2');
 
-document.getElementById('calc-section2').addEventListener('click', async () => {
-  const take_home = parseFloat(document.getElementById('take_home_manual').value);
-  const rent = parseFloat(document.getElementById('monthly_rent').value);
-  const tax = parseFloat(document.getElementById('yearly_council_tax').value);
-  const resultDiv = document.getElementById('result-section2');
-  if (!take_home) return alert('Enter a valid take home');
+        try {
+          const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_living', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              take_home,
+              monthly_rent: isNaN(monthly_rent) ? null : monthly_rent,
+              yearly_council_tax: isNaN(yearly_council_tax) ? null : yearly_council_tax
+            })
+          });
+          const data = await res.json();
+          console.log('living response', data);
+          safe('remaining_after_bills_manual') && (safe('remaining_after_bills_manual').value = data['Remaining After Bills']);
+          if (resultDiv) {
+            resultDiv.innerHTML = `
+              Bills: £${data.Bills}<br><br>
+              <strong>Remaining: £${data['Remaining After Bills']}</strong>
+            `;
+            resultDiv.style.display = 'block';
+          }
+        } catch (e) {
+          console.error('calculate_living error', e);
+          if (resultDiv) { resultDiv.innerText = 'Error calculating.'; resultDiv.style.display = 'block'; }
+        }
+      });
+      btn2.dataset.budgetAttached = '1';
+    }
 
-  try {
-    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_living', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ take_home, monthly_rent: rent, yearly_council_tax: tax })
-    });
-    const data = await res.json();
+    // Food shop: list + calculation
+    const addFoodBtn = safe('add-food-item');
+    const calcFoodBtn = safe('calc-food-shop');
+    const foodListEl = safe('foodshop-list');
+    const foodItems = [];
 
-    lastRemainingAfterBills = data["Remaining After Bills"];
-    document.getElementById('remaining_after_bills_manual').value = lastRemainingAfterBills;
+    if (addFoodBtn && !addFoodBtn.dataset.attached) {
+      addFoodBtn.addEventListener('click', () => {
+        const name = safe('food_item_name')?.value?.trim();
+        const priceRaw = safe('food_item_price')?.value;
+        const price = priceRaw ? parseFloat(priceRaw) : NaN;
+        if (!name) return alert('Enter an item name');
+        if (isNaN(price) || price < 0) return alert('Enter a valid price');
+        foodItems.push({ name, price });
+        safe('food_item_name').value = '';
+        safe('food_item_price').value = '';
+        renderFoodList();
+      });
+      addFoodBtn.dataset.attached = '1';
+    }
 
-    resultDiv.innerHTML = `
-      Bills: £${data.Bills}<br><br>
-      <strong>Remaining: £${data["Remaining After Bills"]}</strong>
-    `;
-    resultDiv.style.display = 'block';
-  } catch (e) {
-    resultDiv.innerText = "Error.";
-    resultDiv.style.display = 'block';
-  }
-});
+    function renderFoodList() {
+      if (!foodListEl) return;
+      if (foodItems.length === 0) { foodListEl.innerHTML = '<em>No items added</em>'; return; }
+      const rows = foodItems.map((it, i) => `<li>${it.name}: £${it.price.toFixed(2)}</li>`).join('');
+      foodListEl.innerHTML = `<ul>${rows}</ul>`;
+    }
 
-const foodItems = [];
+    if (calcFoodBtn && !calcFoodBtn.dataset.attached) {
+      calcFoodBtn.addEventListener('click', async () => {
+        const remainingRaw = safe('remaining_after_bills_manual')?.value;
+        const remaining_after_bills = remainingRaw ? parseFloat(remainingRaw) : 0;
+        if (!remaining_after_bills || isNaN(remaining_after_bills)) return alert('Enter remaining after bills');
+        if (foodItems.length === 0) return alert('Add food items first');
+        try {
+          const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: foodItems, remaining_after_bills })
+          });
+          const data = await res.json();
+          const wrap = safe('foodshop-result-wrapper');
+          const out = safe('foodshop-result');
+          if (out) {
+            out.innerHTML = `
+              Weekly Total: £${Number(data.total).toFixed(2)}<br>
+              Monthly: £${Number(data.monthly_total).toFixed(2)}<br>
+              <strong>Remaining after food: £${Number(data.remaining_after_food).toFixed(2)}</strong>
+            `;
+          }
+          if (wrap) wrap.style.display = 'block';
+        } catch (e) {
+          console.error('foodshop error', e);
+          const out = safe('foodshop-result');
+          if (out) out.innerText = 'Error calculating food shop.';
+        }
+      });
+      calcFoodBtn.dataset.attached = '1';
+    }
 
-document.getElementById('add-food-item').addEventListener('click', () => {
-  const name = document.getElementById('food_item_name').value.trim();
-  const price = parseFloat(document.getElementById('food_item_price').value);
-  if (!name || isNaN(price)) return alert('Enter a name and price');
+    // initial render
+    renderFoodList();
 
-  foodItems.push({ name, price });
-  document.getElementById('food_item_name').value = '';
-  document.getElementById('food_item_price').value = '';
-  updateList();
-});
-
-function updateList() {
-  const list = document.getElementById('foodshop-list');
-  list.innerHTML = '<ul>' + foodItems.map(i => `<li>${i.name}: £${i.price.toFixed(2)}</li>`).join('') + '</ul>';
-}
-
-document.getElementById('calc-food-shop').addEventListener('click', async () => {
-  const rem = parseFloat(document.getElementById('remaining_after_bills_manual').value);
-  const resultDiv = document.getElementById('foodshop-result');
-  if (!rem || foodItems.length === 0) return alert('Enter amount and add items');
-
-  try {
-    const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: foodItems, remaining_after_bills: rem })
-    });
-    const data = await res.json();
-    resultDiv.innerHTML = `
-      Weekly Total: £${data.total.toFixed(2)}<br>
-      Monthly: £${data.monthly_total.toFixed(2)}<br><br>
-      <strong>Remaining: £${data.remaining_after_food.toFixed(2)}</strong>
-    `;
-    document.getElementById('foodshop-result-wrapper').style.display = 'block';
-  } catch (e) {
-    resultDiv.innerText = "Error.";
+  } catch (err) {
+    console.error('budget script init failed', err);
   }
 });
 </script>
