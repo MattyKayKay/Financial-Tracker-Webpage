@@ -45,11 +45,17 @@ def calc_take_home(salary: float, pension_percent: float, student_loan_plan: str
 @app.route("/calculate", methods=["POST"])
 def calculate():
     data = request.get_json(force=True) or {}
-    salary = float(data.get("salary", 0.0))
+    try:
+        salary = float(data.get("salary", 0.0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid salary"}), 400
+
     pension_percent = float(data.get("pension_percent", 0.0))
     student_loan_plan = data.get("student_loan_plan", "none")
+
     if salary <= 0:
         return jsonify({"error": "invalid salary"}), 400
+
     result = calc_take_home(salary, pension_percent, student_loan_plan)
     return jsonify(result)
 
@@ -57,13 +63,24 @@ def calculate():
 @app.route("/calculate_living", methods=["POST"])
 def calculate_living():
     data = request.get_json(force=True) or {}
-    take_home = float(data.get("take_home", 0.0))
+    try:
+        take_home = float(data.get("take_home", 0.0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid take_home"}), 400
+
+    # Accept nulls from client and use sensible defaults
     monthly_rent = data.get("monthly_rent")
     yearly_council_tax = data.get("yearly_council_tax")
 
-    # Use sensible defaults if client omits values
-    monthly_rent = float(monthly_rent) if monthly_rent is not None else 595.0
-    yearly_council_tax = float(yearly_council_tax) if yearly_council_tax is not None else 1818.05
+    try:
+        monthly_rent = float(monthly_rent) if monthly_rent is not None else 595.0
+    except (TypeError, ValueError):
+        monthly_rent = 595.0
+
+    try:
+        yearly_council_tax = float(yearly_council_tax) if yearly_council_tax is not None else 1818.05
+    except (TypeError, ValueError):
+        yearly_council_tax = 1818.05
 
     monthly_council = yearly_council_tax / 12.0
     bills = round(monthly_rent + monthly_council, 2)
@@ -75,7 +92,10 @@ def calculate_living():
 def calculate_foodshop():
     data = request.get_json(force=True) or {}
     items = data.get("items", [])
-    remaining_after_bills = float(data.get("remaining_after_bills", 0.0))
+    try:
+        remaining_after_bills = float(data.get("remaining_after_bills", 0.0))
+    except (TypeError, ValueError):
+        remaining_after_bills = 0.0
 
     weekly_total = round(sum(float(i.get("price", 0.0)) for i in items), 2)
     monthly_total = round(weekly_total * 52.0 / 12.0, 2)

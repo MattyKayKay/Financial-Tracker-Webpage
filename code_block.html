@@ -60,6 +60,26 @@
       <div id="foodshop-result"></div>
     </div>
   </div>
+
+  <!-- Section 4: Luxury Items -->
+  <div class="budget-section">
+    <form id="luxuryshop-form" onsubmit="return false;">
+      <h3>Luxury Items</h3>
+      <label>Remaining After Bills (£):
+        <input type="number" id="luxury_remaining_manual" required />
+      </label>
+      <div style="display:flex; gap:10px;">
+        <label style="flex:1;">Item:<input type="text" id="luxury_item_name" /></label>
+        <label style="flex:1;">Price (£):<input type="number" id="luxury_item_price" /></label>
+      </div>
+      <button type="button" id="add-luxury-item">Add Item</button>
+    </form>
+    <div id="luxuryshop-list" style="margin-top:10px;"></div>
+    <button type="button" id="calc-luxury-shop">Calculate Luxury Spend</button>
+    <div id="luxuryshop-result-wrapper" style="display:none; margin-top:10px;">
+      <div id="luxuryshop-result"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -67,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     console.log('budget script loaded');
     const safe = id => document.getElementById(id);
+
+    // keep track of latest remaining after food (weekly->monthly conversion already done server-side)
+    let lastRemainingAfterFood = null;
 
     // Section 1: Take-home calculation
     const btn1 = safe('calc-section1');
@@ -189,6 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ items: foodItems, remaining_after_bills })
           });
           const data = await res.json();
+          // store the post-food remaining so luxury can use it
+          lastRemainingAfterFood = Number(data.remaining_after_food);
+          // if luxury input exists, update it to reflect the chain
+          const luxInput = safe('luxury_remaining_manual');
+          if (luxInput) luxInput.value = lastRemainingAfterFood;
           const wrap = safe('foodshop-result-wrapper');
           const out = safe('foodshop-result');
           if (out) {
@@ -208,11 +236,45 @@ document.addEventListener('DOMContentLoaded', () => {
       calcFoodBtn.dataset.attached = '1';
     }
 
-    // initial render
-    renderFoodList();
+    // --- Luxury shop: list + calculation (mirror of food shop) ---
+    const addLuxuryBtn = safe('add-luxury-item');
+    const calcLuxuryBtn = safe('calc-luxury-shop');
+    const luxuryListEl = safe('luxuryshop-list');
+    const luxuryItems = [];
 
-  } catch (err) {
-    console.error('budget script init failed', err);
-  }
-});
-</script>
+    if (addLuxuryBtn && !addLuxuryBtn.dataset.attached) {
+      addLuxuryBtn.addEventListener('click', () => {
+        const name = safe('luxury_item_name')?.value?.trim();
+        const priceRaw = safe('luxury_item_price')?.value;
+        const price = priceRaw ? parseFloat(priceRaw) : NaN;
+        if (!name) return alert('Enter an item name');
+        if (isNaN(price) || price < 0) return alert('Enter a valid price');
+        luxuryItems.push({ name, price });
+        safe('luxury_item_name').value = '';
+        safe('luxury_item_price').value = '';
+        renderLuxuryList();
+      });
+      addLuxuryBtn.dataset.attached = '1';
+    }
+
+    function renderLuxuryList() {
+      if (!luxuryListEl) return;
+      if (luxuryItems.length === 0) { luxuryListEl.innerHTML = '<em>No items added</em>'; return; }
+      const rows = luxuryItems.map((it, i) => `<li>${it.name}: £${it.price.toFixed(2)}</li>`).join('');
+      luxuryListEl.innerHTML = `<ul>${rows}</ul>`;
+    }
+
+    if (calcLuxuryBtn && !calcLuxuryBtn.dataset.attached) {
+      calcLuxuryBtn.addEventListener('click', async () => {
+        // prefer the chained post-food remaining if available
+        const remainingRaw = safe('luxury_remaining_manual')?.value;
+        const inputRemaining = remainingRaw ? parseFloat(remainingRaw) : 0;
+        const baseRemaining = (lastRemainingAfterFood !== null && !isNaN(lastRemainingAfterFood))
+          ? lastRemainingAfterFood
+          : inputRemaining;
+
+        if (!baseRemaining || isNaN(baseRemaining)) return alert('Enter remaining after bills (or calculate food shop first)');
+        if (luxuryItems.length === 0) return alert('Add luxury items first');
+
+        try {
+          // reuse same
