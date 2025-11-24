@@ -264,17 +264,41 @@ document.addEventListener('DOMContentLoaded', () => {
       luxuryListEl.innerHTML = `<ul>${rows}</ul>`;
     }
 
+    // add missing handler for calculate luxury
     if (calcLuxuryBtn && !calcLuxuryBtn.dataset.attached) {
       calcLuxuryBtn.addEventListener('click', async () => {
-        // prefer the chained post-food remaining if available
         const remainingRaw = safe('luxury_remaining_manual')?.value;
-        const inputRemaining = remainingRaw ? parseFloat(remainingRaw) : 0;
-        const baseRemaining = (lastRemainingAfterFood !== null && !isNaN(lastRemainingAfterFood))
-          ? lastRemainingAfterFood
-          : inputRemaining;
-
-        if (!baseRemaining || isNaN(baseRemaining)) return alert('Enter remaining after bills (or calculate food shop first)');
+        const remaining_after_bills = remainingRaw ? parseFloat(remainingRaw) : 0;
+        if (!remaining_after_bills || isNaN(remaining_after_bills)) return alert('Enter remaining after bills');
         if (luxuryItems.length === 0) return alert('Add luxury items first');
-
         try {
-          // reuse same
+          const res = await fetch('https://budgetcalculator-api.onrender.com/calculate_foodshop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: luxuryItems, remaining_after_bills })
+          });
+          const data = await res.json();
+          const wrap = safe('luxuryshop-result-wrapper');
+          const out = safe('luxuryshop-result');
+          if (out) {
+            out.innerHTML = `
+              Weekly Total: £${Number(data.total).toFixed(2)}<br>
+              Monthly: £${Number(data.monthly_total).toFixed(2)}<br>
+              <strong>Remaining after luxury: £${Number(data.remaining_after_food).toFixed(2)}</strong>
+            `;
+          }
+          if (wrap) wrap.style.display = 'block';
+        } catch (e) {
+          console.error('luxuryshop error', e);
+          const out = safe('luxuryshop-result');
+          if (out) out.innerText = 'Error calculating luxury shop.';
+        }
+      });
+      calcLuxuryBtn.dataset.attached = '1';
+    }
+
+  } catch (err) {
+    console.error('budget script error', err);
+  }
+});
+</script>
